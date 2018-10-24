@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class MetaBallsImageEffect : MonoBehaviour {
 
-    int width = 512, height = 512;
+    int width, height;
 
     Texture2D _texture;
     Color[] _textureData;
@@ -19,7 +19,6 @@ public class MetaBallsImageEffect : MonoBehaviour {
         height = Display.main.renderingHeight;
 
         _texture = new Texture2D(width, height, TextureFormat.RGBA32, false, true);
-        _textureData = _texture.GetPixels();
         _transform = transform;
         _camera = GetComponent<Camera>(); 
 	}
@@ -66,7 +65,13 @@ public class MetaBallsImageEffect : MonoBehaviour {
         {
             for (int y = 0; y < height; ++y)
             {
-                _textureData[x + (y * width)].r = intensity(x, y); 
+                var result = intensity(x, y); 
+                if(result > 1) {
+                    int index = x + (y * width);
+                    _textureData[index].r = 
+                    _textureData[index].g = 
+                    _textureData[index].b = result; 
+                }
             }
         }
         _texture.SetPixels(_textureData);
@@ -75,9 +80,11 @@ public class MetaBallsImageEffect : MonoBehaviour {
 
     public void OnRenderImage(RenderTexture source, RenderTexture destination)
     {
-        RenderTexture.active = source;
+        RenderTexture.active = source; 
+
+        // Reads the pixels from the source into the _texture
         _texture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-        _textureData = _texture.GetPixels();
+        _textureData = _texture.GetPixels(); 
 
         processTexture();
 

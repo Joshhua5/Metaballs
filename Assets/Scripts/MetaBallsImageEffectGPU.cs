@@ -8,10 +8,9 @@ using UnityEngine;
 public class MetaBallsImageEffectGPU : MonoBehaviour {
 
     public Material _metaballMaterial;
+    public float Cutoff = 1;
 
-    int width = 512, height = 512;
-
-    Texture2D _texture;
+    //Texture2D _texture;
     Color[] _textureData;
     Transform _transform;
     Camera _camera;
@@ -19,12 +18,7 @@ public class MetaBallsImageEffectGPU : MonoBehaviour {
     CircleCollider2D[] _colliders;
     List<Vector4> _ballPositions = new List<Vector4>(64);
 	// Use this for initialization
-	void Start () {
-        width = Display.main.renderingWidth;
-        height = Display.main.renderingHeight;
-
-        _texture = new Texture2D(width, height, TextureFormat.RGBA32, false, true);
-        _textureData = _texture.GetPixels();
+	void Start () {  
         _transform = transform;
         _camera = GetComponent<Camera>(); 
 
@@ -41,6 +35,7 @@ public class MetaBallsImageEffectGPU : MonoBehaviour {
         _metaballMaterial.SetFloat("_Aspect", _camera.aspect);
         _metaballMaterial.SetFloat("_Height", _camera.orthographicSize);
         _metaballMaterial.SetVector("_Position", _camera.transform.position);
+        _metaballMaterial.SetFloat("_Cutoff", Cutoff);
 
         _metaballMaterial.SetInt("_BallCount", _colliders.Length);
         _ballPositions.Clear();

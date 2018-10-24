@@ -1,9 +1,10 @@
 ﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
 
-Shader "Effect/MetaBalls"
+Shader "Custom/MetaBalls"
 {
 	Properties
 	{ 
+		_MainTex ("Texture", 2D) = "white" {}
 	}
 	SubShader
 	{
@@ -20,74 +21,53 @@ Shader "Effect/MetaBalls"
 
 			struct appdata
 			{
-				half4 vertex : POSITION;
-				float2 uv : TEXCOORD0;
+				float4 vertex : POSITION;
+				half2 uv : TEXCOORD0;
 			};
 
 			struct v2f
 			{
 				half4 vertex : SV_POSITION; 
-				half2 pixelWS : TEXCOORD0; 
+				half2 uv : TEXCOORD0;
+				half2 pixelWS : TEXCOORD1; 
 			}; 
 
 			uniform float4 _Position;
 			uniform float _Aspect;
 			uniform float _Height;
+			uniform float _Cutoff;
+			sampler2D _MainTex; 
 			 
 			uniform float4 _BallPosition[64]; // x, y, radius2
 			uniform int _BallCount;
 			
-			half2 compress(half2 value){
-				return (value / 2.0) + half2(0.5, 0.5);	
-			}
-
-			half2 extract(half2 value){
-				return (value - half2(0.5, 0.5)) * 2;
-			}
-
-
 			v2f vert (appdata v)
 			{
 				v2f o;
 				o.pixelWS = (mul(unity_ObjectToWorld, v.vertex).xy);
 				//o.pixelWS = v.vertex.xy;
 				o.vertex = UnityObjectToClipPos(v.vertex);
+				o.uv = v.uv;
 				// o.vertex = mul(unity_ObjectToWorld, v.vertex);
 				return o;
 			}
 			 
-
 			fixed4 frag (v2f i) : SV_Target
-			{  
-				// half2 pixel = (i.pixelWS - half2(0.5, 0.5)) * 2;
-				half2 pixel = (i.pixelWS); 
-				  
-				// Pixel Position 
-              
+			{   
+				// Pixel Position  
 				half2 wh = half2(_Aspect * _Height, _Height);
-				pixel = (pixel * wh * 2.0) + (_Position - wh);
-				 
-				// Circle Position 
-
-				// Calculate the distance squared
-				 
-				// For each collider
-				half intensity = 0;
-				for(int i = 0 ; i < _BallCount; ++i){ 
-					// Get the distance between collider centre and ws pixel
-					// var xComp = (i.pixelWS.x - cX) * (pX - cX);  
-					// var yComp = (i.pixelWS.y - cY) * (pY - cY);
+				half2 pixel = (i.pixelWS * wh * 2.0) + (_Position - wh);
 				  
-					half2 distance = pow((pixel - _BallPosition[i].xy), 2); 
-					
-					// Blend colour accordingly
-					intensity += _BallPosition[i].z / abs(distance.x + distance.y); 
-					
+				// For each point
+				half intensity = 0;
+				for(int j = 0 ; j < _BallCount; ++j) {   
+					// Add the distances together
+					intensity += _BallPosition[j].z / distance(pixel, _BallPosition[j].xy);
 				} 
 
-				if(intensity >= 1)  
-					return half4(intensity, intensity, intensity, 1);
-				return half4( 0, 0, 0, 1);
+				if(intensity < _Cutoff)
+					return tex2D(_MainTex, i.uv); 
+				return half4(intensity, intensity, intensity, 1); 
 			}
 			ENDCG
 		}
